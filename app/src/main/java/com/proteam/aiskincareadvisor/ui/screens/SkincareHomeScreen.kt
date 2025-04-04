@@ -16,7 +16,7 @@ import com.proteam.aiskincareadvisor.R
 @Composable
 fun SkincareHomeScreen(
     onGetStartedClick: () -> Unit,
-    onSignInClick: () -> Unit
+    onLoginClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -68,9 +68,9 @@ fun SkincareHomeScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Already have an account? Sign in",
+                text = "Already have an account? Login",
                 style = MaterialTheme.typography.bodySmall.copy(color = Color.Blue),
-                modifier = Modifier.clickable { onSignInClick() }
+                modifier = Modifier.clickable { onLoginClick() }
             )
         }
     }
