@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import com.proteam.aiskincareadvisor.ui.screens.SkincareHomeScreen
 import com.proteam.aiskincareadvisor.ui.screens.GetStartedScreen
 import com.proteam.aiskincareadvisor.ui.screens.LoginScreen
+import com.proteam.aiskincareadvisor.ui.screens.RegisterScreen
 import com.proteam.aiskincareadvisor.ui.theme.AISkincareTheme
 
 class MainActivity : ComponentActivity() {
@@ -29,7 +30,7 @@ fun AppNavigation() {
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
             SkincareHomeScreen(
-                onGetStartedClick = { navController.navigate("getStarted") },
+                onGetStartedClick = { navController.navigate("register") },
                 onLoginClick = { navController.navigate("login") }
             )
         }
@@ -38,6 +39,12 @@ fun AppNavigation() {
         }
         composable("login") {
             LoginScreen(onBack = { navController.popBackStack() })
+        }
+        composable("register") {
+            RegisterScreen(
+                onLoginClick = { navController.navigate("login") },
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }
