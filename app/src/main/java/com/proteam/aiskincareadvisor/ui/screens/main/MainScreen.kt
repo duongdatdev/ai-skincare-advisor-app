@@ -25,56 +25,63 @@ fun MainScreen() {
         BottomNavItem("profile", "Profile", Icons.Default.Person)
     )
 
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val showBars = currentRoute != "chat"
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Lemmie",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                actions = {
-                    // Chat icon - navigates to chat screen
-                    IconButton(onClick = {
-                        navController.navigate("chat") {
-                            launchSingleTop = true
+            if (showBars) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Lemmie",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    actions = {
+                        // Chat icon - navigates to chat screen
+                        IconButton(onClick = {
+                            navController.navigate("chat") {
+                                launchSingleTop = true
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.MailOutline,
+                                contentDescription = "Chat"
+                            )
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.MailOutline,
-                            contentDescription = "Chat"
-                        )
-                    }
 
-                    // Notification icon
-                    IconButton(onClick = { /* Handle notifications */ }) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notifications"
-                        )
+                        // Notification icon
+                        IconButton(onClick = { /* Handle notifications */ }) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notifications"
+                            )
+                        }
                     }
-                }
-            )
+                )
+            }
         },
         bottomBar = {
-            NavigationBar {
-                val currentDestination = navController.currentBackStackEntryAsState().value?.destination?.route
-                screens.forEach { screen ->
-                    NavigationBarItem(
-                        selected = currentDestination == screen.route,
-                        onClick = {
-                            if (currentDestination != screen.route) {
-                                navController.navigate(screen.route) {
-                                    popUpTo("home") { inclusive = false }
-                                    launchSingleTop = true
+            if (showBars) {
+                NavigationBar {
+                    val currentDestination = navController.currentBackStackEntryAsState().value?.destination?.route
+                    screens.forEach { screen ->
+                        NavigationBarItem(
+                            selected = currentDestination == screen.route,
+                            onClick = {
+                                if (currentDestination != screen.route) {
+                                    navController.navigate(screen.route) {
+                                        popUpTo("home") { inclusive = false }
+                                        launchSingleTop = true
+                                    }
                                 }
-                            }
-                        },
-                        icon = { Icon(screen.icon, contentDescription = screen.label) },
-                        label = { Text(screen.label) }
-                    )
+                            },
+                            icon = { Icon(screen.icon, contentDescription = screen.label) },
+                            label = { Text(screen.label) }
+                        )
+                    }
                 }
             }
         }
@@ -88,10 +95,13 @@ fun MainScreen() {
             composable("analyze") { AnalysisScreen() }
             composable("products") { ProductScreen() }
             composable("profile") { ProfileScreen() }
-            composable("chat") { /* ChatScreen() */ }
+            composable("chat") {
+                ChatScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
-
 data class BottomNavItem(val route: String, val label: String, val icon: ImageVector)
 
