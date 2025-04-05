@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.proteam.aiskincareadvisor.R
 
 @Composable
-fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}) {
+fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuccess: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -175,7 +175,9 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}) {
 
         // Login button with improved styling
         Button(
-            onClick = { /* Handle login */ },
+            onClick = { /* Handle login */
+                onLoginSuccess()
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(54.dp)
@@ -197,10 +199,10 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}) {
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.weight(1f),
-                color = Color(0xFFCCCCCC),
-                thickness = 1.dp
+                thickness = 1.dp,
+                color = Color(0xFFCCCCCC)
             )
             Text(
                 "OR",
@@ -208,10 +210,10 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}) {
                 color = Color(0xFF757575),
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.weight(1f),
-                color = Color(0xFFCCCCCC),
-                thickness = 1.dp
+                thickness = 1.dp,
+                color = Color(0xFFCCCCCC)
             )
         }
 
