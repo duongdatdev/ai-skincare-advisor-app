@@ -9,9 +9,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.*
 import com.proteam.aiskincareadvisor.R
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
@@ -23,6 +26,38 @@ fun MainScreen() {
     )
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Lemmie",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                actions = {
+                    // Chat icon - navigates to chat screen
+                    IconButton(onClick = {
+                        navController.navigate("chat") {
+                            launchSingleTop = true
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.MailOutline,
+                            contentDescription = "Chat"
+                        )
+                    }
+
+                    // Notification icon
+                    IconButton(onClick = { /* Handle notifications */ }) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notifications"
+                        )
+                    }
+                }
+            )
+        },
         bottomBar = {
             NavigationBar {
                 val currentDestination = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -50,30 +85,13 @@ fun MainScreen() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("home") { HomeScreen() }
-            composable("analyze") { AnalyzeScreen() }
+            composable("analyze") { AnalysisScreen() }
             composable("products") { ProductScreen() }
             composable("profile") { ProfileScreen() }
+            composable("chat") { /* ChatScreen() */ }
         }
     }
 }
 
 data class BottomNavItem(val route: String, val label: String, val icon: ImageVector)
-//@Composable
-//fun HomeScreen() {
-//    Text("Home Screen (Giao diện Home bạn gửi)")
-//}
 
-@Composable
-fun AnalyzeScreen() {
-    Text("Analyze Screen")
-}
-
-@Composable
-fun ProductScreen() {
-    Text("Product Screen (Giao diện Products bạn gửi)")
-}
-
-@Composable
-fun ProfileScreen() {
-    Text("Profile Screen")
-}

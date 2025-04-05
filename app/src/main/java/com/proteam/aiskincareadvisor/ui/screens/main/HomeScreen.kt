@@ -32,20 +32,6 @@ fun HomeScreen() {
             .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
-        // Top Bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("Lemmie", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Row {
-                Icon(Icons.Default.Notifications, contentDescription = "Notification")
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(Icons.Default.AccountCircle, contentDescription = "Profile")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         // Skin Status
         Card(
