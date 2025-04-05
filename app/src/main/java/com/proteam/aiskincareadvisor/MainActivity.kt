@@ -9,7 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.composable
 import com.proteam.aiskincareadvisor.ui.screens.SkincareHomeScreen
 import com.proteam.aiskincareadvisor.ui.screens.LoginScreen
-import com.proteam.aiskincareadvisor.ui.screens.MainScreen
+import com.proteam.aiskincareadvisor.ui.screens.main.MainScreen
 import com.proteam.aiskincareadvisor.ui.screens.RegisterScreen
 import com.proteam.aiskincareadvisor.ui.theme.AISkincareTheme
 

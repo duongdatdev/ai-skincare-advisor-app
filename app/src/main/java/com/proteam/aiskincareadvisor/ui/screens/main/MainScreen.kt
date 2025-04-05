@@ -1,5 +1,5 @@
 // MainScreen.kt
-package com.proteam.aiskincareadvisor.ui.screens
+package com.proteam.aiskincareadvisor.ui.screens.main
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
@@ -8,9 +8,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import com.proteam.aiskincareadvisor.R
 
@@ -60,10 +58,10 @@ fun MainScreen() {
 }
 
 data class BottomNavItem(val route: String, val label: String, val icon: ImageVector)
-@Composable
-fun HomeScreen() {
-    Text("Home Screen (Giao diện Home bạn gửi)")
-}
+//@Composable
+//fun HomeScreen() {
+//    Text("Home Screen (Giao diện Home bạn gửi)")
+//}
 
 @Composable
 fun AnalyzeScreen() {
