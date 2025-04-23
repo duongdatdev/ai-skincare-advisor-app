@@ -107,6 +107,6 @@ dependencies {
     implementation (libs.androidx.lifecycle.viewmodel.compose)
 
     implementation(libs.azure.ai.inference)
-
+    implementation (libs.coil.compose)
 
 }

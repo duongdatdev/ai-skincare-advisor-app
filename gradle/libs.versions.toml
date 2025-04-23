@@ -1,6 +1,7 @@
 [versions]
 agp = "8.8.2"
 azureAiInference = "1.0.0-beta.4"
+coilCompose = "2.4.0"
 converterGson = "2.9.0"
 kotlin = "2.0.0"
 coreKtx = "1.15.0"
@@ -21,6 +22,7 @@ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = 
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-navigation-compose-v275 = { module = "androidx.navigation:navigation-compose", version.ref = "navigationComposeVersion" }
 azure-ai-inference = { module = "com.azure:azure-ai-inference", version.ref = "azureAiInference" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
