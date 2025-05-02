@@ -25,10 +25,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.border
+import androidx.compose.runtime.remember
+import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 import com.proteam.aiskincareadvisor.R
+import com.proteam.aiskincareadvisor.data.auth.FirebaseAuthHelper
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen( navController: NavController,
+                   authHelper: FirebaseAuthHelper = remember { FirebaseAuthHelper() }) {
     val primaryColor = Color(0xFF6A43E8) // Using the same purple as in LoginScreen
 
     LazyColumn(
@@ -63,7 +68,15 @@ fun ProfileScreen() {
 
                 // Log Out Button
                 Button(
-                    onClick = { /* Handle log out */ },
+                    onClick = {
+                        // Use the helper method to sign out
+                        authHelper.signOut()
+
+                        // Navigate to login screen
+                        navController.navigate("login") {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252)),
                     shape = RoundedCornerShape(12.dp)

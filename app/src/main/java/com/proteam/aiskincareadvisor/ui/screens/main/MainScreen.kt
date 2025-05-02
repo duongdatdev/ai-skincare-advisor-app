@@ -94,7 +94,7 @@ fun MainScreen() {
             composable("home") { HomeScreen() }
             composable("analyze") { AnalysisScreen() }
             composable("products") { ProductScreen() }
-            composable("profile") { ProfileScreen() }
+            composable("profile") { ProfileScreen(navController = navController) }
             composable("chat") {
                 ChatScreen(
                     onBack = { navController.popBackStack() }
