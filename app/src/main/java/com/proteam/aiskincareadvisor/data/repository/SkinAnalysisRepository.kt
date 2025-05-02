@@ -18,7 +18,7 @@ class SkinAnalysisRepository(private val context: Context) {
 
             val contentItems = listOf(
                 ChatMessageTextContentItem(
-                    "Phân tích ảnh da này và cho biết loại da, các vấn đề có thể thấy, và gợi ý chăm sóc da phù hợp bằng tiếng Việt."
+                    "Phân tích ảnh da này và cho biết loại da, các vấn đề có thể thấy, tình trạng mụn, và gợi ý chăm sóc da phù hợp bằng tiếng Việt."
                 ),
                 ChatMessageImageContentItem(imageFile.toPath(), "jpeg") // hoặc "jpg" tùy định dạng
             )
