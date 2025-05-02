@@ -1,5 +1,5 @@
 [versions]
-agp = "8.8.2"
+agp = "8.9.2"
 azureAiInference = "1.0.0-beta.4"
 coilCompose = "2.4.0"
 converterGson = "2.9.0"
