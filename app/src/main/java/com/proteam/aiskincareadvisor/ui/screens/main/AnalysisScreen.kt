@@ -22,9 +22,9 @@ import com.proteam.aiskincareadvisor.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnalysisScreen() {
+fun AnalysisScreen(onNavigateToAnalysis: () -> Unit) {
     Scaffold(
-
+        // Scaffold content
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -35,7 +35,7 @@ fun AnalysisScreen() {
             item { LastScanHeader() }
             item { SkinHealthSummarySection() }
             item { DetailedBreakdownSection() }
-            item { ReanalyzeButton() }
+            item { ReanalyzeButton(onReanalyze = onNavigateToAnalysis) }
             item { ViewRoutineRecommendationsLink() }
             item { TipsAndInsightsSection() }
 
@@ -166,13 +166,13 @@ fun BreakdownItem(label: String, value: String) {
 
 // Reanalyze Skin Button
 @Composable
-fun ReanalyzeButton() {
+fun ReanalyzeButton(onReanalyze: () -> Unit) {
     Button(
-        onClick = { /* Handle reanalyze */ },
+        onClick = onReanalyze,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)), // Blue color
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
         shape = RoundedCornerShape(8.dp)
     ) {
         Text(

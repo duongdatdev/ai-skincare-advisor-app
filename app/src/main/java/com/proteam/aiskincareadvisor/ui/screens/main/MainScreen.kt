@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.*
 import com.proteam.aiskincareadvisor.R
+import com.proteam.aiskincareadvisor.ui.screens.analysis.SkinAnalysisScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -20,7 +21,7 @@ fun MainScreen() {
     val navController = rememberNavController()
     val screens = listOf(
         BottomNavItem("home", "Home", ImageVector.vectorResource(id = R.drawable.ic_home)),
-        BottomNavItem("analyze", "Analyze", ImageVector.vectorResource(id = R.drawable.ic_camera)),
+        BottomNavItem("analysis", "Analyze", ImageVector.vectorResource(id = R.drawable.ic_camera)),
         BottomNavItem("products", "Products", Icons.Default.ShoppingCart),
         BottomNavItem("profile", "Profile", Icons.Default.Person)
     )
@@ -66,7 +67,8 @@ fun MainScreen() {
         bottomBar = {
             if (showBars) {
                 NavigationBar {
-                    val currentDestination = navController.currentBackStackEntryAsState().value?.destination?.route
+                    val currentDestination =
+                        navController.currentBackStackEntryAsState().value?.destination?.route
                     screens.forEach { screen ->
                         NavigationBarItem(
                             selected = currentDestination == screen.route,
@@ -92,7 +94,16 @@ fun MainScreen() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("home") { HomeScreen() }
-            composable("analyze") { AnalysisScreen() }
+            composable("analysis") {
+                AnalysisScreen(
+                    onNavigateToAnalysis = {
+                        navController.navigate("skin_analysis")
+                    }
+                )
+            }
+            composable("skin_analysis") {
+                SkinAnalysisScreen()
+            }
             composable("products") { ProductScreen() }
             composable("profile") { ProfileScreen(navController = navController) }
             composable("chat") {
@@ -103,5 +114,6 @@ fun MainScreen() {
         }
     }
 }
+
 data class BottomNavItem(val route: String, val label: String, val icon: ImageVector)
 
