@@ -31,6 +31,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.proteam.aiskincareadvisor.data.auth.FirebaseAuthHelper
+import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
@@ -41,6 +43,13 @@ fun RegisterScreen(onLoginClick: () -> Unit = {}, onBack: () -> Unit = {}) {
     val confirmPassword = remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var isTermsAccepted by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    val firebaseAuthHelper = remember { FirebaseAuthHelper() }
+    val coroutineScope = rememberCoroutineScope()
+    
     val primaryColor = Color(0xFF7C3AED)
     val iconColor = Color(0xFF4A4A4A)
     val backgroundColor = Color(0xFFF5F0F7)
@@ -99,11 +108,24 @@ fun RegisterScreen(onLoginClick: () -> Unit = {}, onBack: () -> Unit = {}) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
             )
+            
+            // Show error message if there is one
+            errorMessage?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
 
             // Input fields with improved styling
             OutlinedTextField(
                 value = fullName.value,
-                onValueChange = { fullName.value = it },
+                onValueChange = { 
+                    fullName.value = it
+                    errorMessage = null
+                },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Person,
@@ -119,12 +141,16 @@ fun RegisterScreen(onLoginClick: () -> Unit = {}, onBack: () -> Unit = {}) {
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = primaryColor,
                     unfocusedBorderColor = Color(0xFFCCCCCC)
-                )
+                ),
+                isError = errorMessage != null && fullName.value.isEmpty()
             )
 
             OutlinedTextField(
                 value = email.value,
-                onValueChange = { email.value = it },
+                onValueChange = { 
+                    email.value = it
+                    errorMessage = null
+                },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Email,
@@ -141,12 +167,16 @@ fun RegisterScreen(onLoginClick: () -> Unit = {}, onBack: () -> Unit = {}) {
                     focusedBorderColor = primaryColor,
                     unfocusedBorderColor = Color(0xFFCCCCCC)
                 ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                isError = errorMessage != null && email.value.isEmpty()
             )
 
             OutlinedTextField(
                 value = password.value,
-                onValueChange = { password.value = it },
+                onValueChange = { 
+                    password.value = it
+                    errorMessage = null
+                },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Lock,
@@ -181,12 +211,16 @@ fun RegisterScreen(onLoginClick: () -> Unit = {}, onBack: () -> Unit = {}) {
                     focusedBorderColor = primaryColor,
                     unfocusedBorderColor = Color(0xFFCCCCCC)
                 ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                isError = errorMessage != null && (password.value.isEmpty() || password.value != confirmPassword.value)
             )
 
             OutlinedTextField(
                 value = confirmPassword.value,
-                onValueChange = { confirmPassword.value = it },
+                onValueChange = { 
+                    confirmPassword.value = it
+                    errorMessage = null
+                },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Lock,
@@ -221,7 +255,8 @@ fun RegisterScreen(onLoginClick: () -> Unit = {}, onBack: () -> Unit = {}) {
                     focusedBorderColor = primaryColor,
                     unfocusedBorderColor = Color(0xFFCCCCCC)
                 ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                isError = errorMessage != null && (confirmPassword.value.isEmpty() || password.value != confirmPassword.value)
             )
 
             // Terms and conditions with checkbox
@@ -229,10 +264,12 @@ fun RegisterScreen(onLoginClick: () -> Unit = {}, onBack: () -> Unit = {}) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
-                var isChecked by remember { mutableStateOf(false) }
                 Checkbox(
-                    checked = isChecked,
-                    onCheckedChange = { isChecked = it },
+                    checked = isTermsAccepted,
+                    onCheckedChange = { 
+                        isTermsAccepted = it
+                        errorMessage = null
+                    },
                     colors = CheckboxDefaults.colors(checkedColor = primaryColor)
                 )
                 Text(
@@ -245,19 +282,81 @@ fun RegisterScreen(onLoginClick: () -> Unit = {}, onBack: () -> Unit = {}) {
 
             // Register button with improved styling
             Button(
-                onClick = { /* Handle Registration */ },
+                onClick = {
+                    // Validation
+                    when {
+                        fullName.value.isEmpty() -> {
+                            errorMessage = "Please enter your full name"
+                            return@Button
+                        }
+                        email.value.isEmpty() -> {
+                            errorMessage = "Please enter your email"
+                            return@Button
+                        }
+                        password.value.isEmpty() -> {
+                            errorMessage = "Please enter your password"
+                            return@Button
+                        }
+                        password.value != confirmPassword.value -> {
+                            errorMessage = "Passwords do not match"
+                            return@Button
+                        }
+                        password.value.length < 6 -> {
+                            errorMessage = "Password must be at least 6 characters"
+                            return@Button
+                        }
+                        !isTermsAccepted -> {
+                            errorMessage = "Please accept the Terms and Privacy Policy"
+                            return@Button
+                        }
+                    }
+                    
+                    // Register with Firebase
+                    coroutineScope.launch {
+                        isLoading = true
+                        try {
+                            val result = firebaseAuthHelper.registerWithEmailPassword(
+                                fullName.value,
+                                email.value,
+                                password.value
+                            )
+                            result.fold(
+                                onSuccess = {
+                                    // Registration successful, navigate to login or main screen
+                                    onLoginClick()
+                                },
+                                onFailure = { e ->
+                                    errorMessage = e.message ?: "Registration failed"
+                                }
+                            )
+                        } catch (e: Exception) {
+                            errorMessage = e.message ?: "An error occurred"
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp)
                     .padding(vertical = 8.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                enabled = !isLoading
             ) {
-                Text(
-                    "CREATE ACCOUNT",
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        "CREATE ACCOUNT",
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

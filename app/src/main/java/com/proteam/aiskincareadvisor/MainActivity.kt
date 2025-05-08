@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.composable
+import com.proteam.aiskincareadvisor.data.auth.FirebaseAuthHelper
 import com.proteam.aiskincareadvisor.ui.screens.SkincareHomeScreen
 import com.proteam.aiskincareadvisor.ui.screens.LoginScreen
 import com.proteam.aiskincareadvisor.ui.screens.main.MainScreen
@@ -27,7 +28,16 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "home") {
+    val firebaseAuthHelper = FirebaseAuthHelper()
+
+    // Determine start destination based on authentication status
+    val startDestination = if (firebaseAuthHelper.isUserAuthenticated()) {
+        "main"
+    } else {
+        "home"
+    }
+
+    NavHost(navController = navController, startDestination = startDestination) {
         composable("home") {
             SkincareHomeScreen(
                 onGetStartedClick = { navController.navigate("register") },
@@ -38,7 +48,12 @@ fun AppNavigation() {
             LoginScreen(
                 onBack = { navController.popBackStack() },
                 onRegisterClick = { navController.navigate("register") },
-                onLoginSuccess = { navController.navigate("main") }
+                onLoginSuccess = {
+                    navController.navigate("main") {
+                        // Clear the back stack so user can't go back to login/register screens
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
             )
         }
         composable("register") {
@@ -50,6 +65,5 @@ fun AppNavigation() {
         composable("main") {
             MainScreen()
         }
-
     }
 }

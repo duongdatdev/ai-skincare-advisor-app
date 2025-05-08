@@ -1,3 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AISkincareAdvisor</string>
+    <string name="app_name">AI Skincare Advisor</string>
+    <!-- Add your reCAPTCHA site key here -->
+    <string name="recaptcha_site_key">YOUR_RECAPTCHA_SITE_KEY</string>
+    <!-- Add your Google web client ID here (from Firebase console) -->
+    <string name="google_web_client_id">YOUR_GOOGLE_WEB_CLIENT_ID</string>
+    <string name="default_web_client_id">280950181070-r8t79suimk02q5bsdjv9r6ujiomenpmk.apps.googleusercontent.com</string>
 </resources>

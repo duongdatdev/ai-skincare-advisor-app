@@ -105,7 +105,7 @@ fun MainScreen() {
                 SkinAnalysisScreen()
             }
             composable("products") { ProductScreen() }
-            composable("profile") { ProfileScreen() }
+            composable("profile") { ProfileScreen(navController = navController) }
             composable("chat") {
                 ChatScreen(
                     onBack = { navController.popBackStack() }

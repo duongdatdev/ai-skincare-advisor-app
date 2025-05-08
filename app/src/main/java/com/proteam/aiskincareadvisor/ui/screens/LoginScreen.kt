@@ -1,5 +1,10 @@
 package com.proteam.aiskincareadvisor.ui.screens
 
+// Add these imports at the top of your file
+// Add/modify these imports at the top
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -13,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -21,7 +27,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.GoogleAuthProvider
 import com.proteam.aiskincareadvisor.R
+import com.proteam.aiskincareadvisor.data.auth.FirebaseAuthHelper
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuccess: () -> Unit) {
@@ -29,10 +41,47 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuc
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val firebaseAuthHelper = remember { FirebaseAuthHelper() }
+    val coroutineScope = rememberCoroutineScope()
 
     val primaryColor = Color(0xFF6A43E8)
     val iconColor = Color(0xFF757575)
 
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+
+                // Use your Firebase Auth Helper to sign in with Google
+                coroutineScope.launch {
+                    isLoading = true
+                    try {
+                        val result = firebaseAuthHelper.signInWithCredential(credential)
+                        result.fold(
+                            onSuccess = { onLoginSuccess() },
+                            onFailure = { e ->
+                                errorMessage = e.message ?: "Google Sign-In failed"
+                            }
+                        )
+                    } catch (e: Exception) {
+                        errorMessage = e.message ?: "An error occurred"
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            } catch (e: ApiException) {
+                errorMessage = "Google sign in failed: ${e.statusCode}"
+            }
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -78,10 +127,23 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuc
             modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
         )
 
+        // Show error message if there is one
+        errorMessage?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
         // Input fields with improved styling
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = {
+                email = it
+                errorMessage = null
+            },
             leadingIcon = {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_email),
@@ -98,12 +160,16 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuc
                 focusedBorderColor = primaryColor,
                 unfocusedBorderColor = Color(0xFFCCCCCC)
             ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            isError = errorMessage != null
         )
 
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = {
+                password = it
+                errorMessage = null
+            },
             leadingIcon = {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_lock),
@@ -138,7 +204,8 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuc
                 focusedBorderColor = primaryColor,
                 unfocusedBorderColor = Color(0xFFCCCCCC)
             ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            isError = errorMessage != null
         )
 
         // Remember me and forgot password
@@ -169,27 +236,84 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuc
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = primaryColor,
-                modifier = Modifier.clickable { /* Handle forgot password */ }
+                modifier = Modifier.clickable {
+                    // Handle forgot password
+                    if (email.isNotEmpty()) {
+                        coroutineScope.launch {
+                            isLoading = true
+                            try {
+                                when (val result = firebaseAuthHelper.resetPassword(email)) {
+                                    is Result.Companion -> {
+                                        errorMessage = "Password reset email sent to $email"
+                                    }
+
+                                    else -> {
+                                        errorMessage =
+                                            result.exceptionOrNull()?.message ?: "Failed to send reset email"
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                errorMessage = e.message ?: "An error occurred"
+                            } finally {
+                                isLoading = false
+                            }
+                        }
+                    } else {
+                        errorMessage = "Please enter your email address first"
+                    }
+                }
             )
         }
 
         // Login button with improved styling
         Button(
-            onClick = { /* Handle login */
-                onLoginSuccess()
+            onClick = {
+                if (email.isEmpty() || password.isEmpty()) {
+                    errorMessage = "Please enter both email and password"
+                    return@Button
+                }
+
+                coroutineScope.launch {
+                    isLoading = true
+                    try {
+                        val result = firebaseAuthHelper.signInWithEmailPassword(email, password)
+                        result.fold(
+                            onSuccess = {
+                                errorMessage = null
+                                onLoginSuccess()
+                            },
+                            onFailure = { e ->
+                                errorMessage = e.message ?: "Authentication failed"
+                            }
+                        )
+                    } catch (e: Exception) {
+                        errorMessage = e.message ?: "An error occurred"
+                    } finally {
+                        isLoading = false
+                    }
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(54.dp)
                 .padding(vertical = 8.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+            colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+            enabled = !isLoading
         ) {
-            Text(
-                "LOGIN",
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp
-            )
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(
+                    "LOGIN",
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -219,9 +343,19 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuc
 
         Spacer(modifier = Modifier.height(16.dp))
 
+
         // Social login buttons
         Button(
-            onClick = { /* Handle Google login */ },
+
+            onClick = {
+                val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestIdToken(context.getString(R.string.default_web_client_id))
+                    .requestEmail()
+                    .build()
+
+                val googleSignInClient = GoogleSignIn.getClient(context, gso)
+                launcher.launch(googleSignInClient.signInIntent)
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
