@@ -12,6 +12,7 @@ import com.proteam.aiskincareadvisor.ui.screens.SkincareHomeScreen
 import com.proteam.aiskincareadvisor.ui.screens.LoginScreen
 import com.proteam.aiskincareadvisor.ui.screens.main.MainScreen
 import com.proteam.aiskincareadvisor.ui.screens.RegisterScreen
+import com.proteam.aiskincareadvisor.ui.screens.main.ChangePasswordScreen
 import com.proteam.aiskincareadvisor.ui.theme.AISkincareTheme
 
 class MainActivity : ComponentActivity() {
@@ -30,40 +31,48 @@ fun AppNavigation() {
     val navController = rememberNavController()
     val firebaseAuthHelper = FirebaseAuthHelper()
 
-    // Determine start destination based on authentication status
-    val startDestination = if (firebaseAuthHelper.isUserAuthenticated()) {
-        "main"
-    } else {
-        "home"
-    }
-
-    NavHost(navController = navController, startDestination = startDestination) {
+    NavHost(
+        navController = navController,
+        startDestination = if (firebaseAuthHelper.isUserAuthenticated()) "main" else "home"
+    ) {
         composable("home") {
             SkincareHomeScreen(
                 onGetStartedClick = { navController.navigate("register") },
                 onLoginClick = { navController.navigate("login") }
             )
         }
+
         composable("login") {
             LoginScreen(
                 onBack = { navController.popBackStack() },
                 onRegisterClick = { navController.navigate("register") },
                 onLoginSuccess = {
                     navController.navigate("main") {
-                        // Clear the back stack so user can't go back to login/register screens
                         popUpTo("home") { inclusive = true }
                     }
                 }
             )
         }
+
         composable("register") {
             RegisterScreen(
                 onLoginClick = { navController.navigate("login") },
                 onBack = { navController.popBackStack() }
             )
         }
+
         composable("main") {
-            MainScreen()
+            MainScreen(
+                onLogout = {
+                    navController.navigate("home") {
+                        popUpTo("main") { inclusive = true }
+                    }
+                }
+
+            )
         }
+
+        // Add the change_password route
+
     }
 }
