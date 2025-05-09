@@ -96,6 +96,7 @@ fun MainScreen() {
             composable("home") { HomeScreen() }
             composable("analysis") {
                 AnalysisScreen(
+                    navController = navController,
                     onNavigateToAnalysis = {
                         navController.navigate("skin_analysis")
                     }
@@ -110,6 +111,9 @@ fun MainScreen() {
                 ChatScreen(
                     onBack = { navController.popBackStack() }
                 )
+            }
+            composable("routine") {
+                RoutineScreen()
             }
         }
     }
