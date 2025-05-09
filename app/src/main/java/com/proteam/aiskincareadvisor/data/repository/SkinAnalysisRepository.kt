@@ -1,7 +1,9 @@
 package com.proteam.aiskincareadvisor.data.repository
 
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.azure.ai.inference.models.*
 import com.google.firebase.firestore.FirebaseFirestore
 import com.proteam.aiskincareadvisor.data.api.AIClient
@@ -49,7 +51,7 @@ class SkinAnalysisRepository(private val context: Context) {
             )
 
             val messages = listOf(
-                ChatRequestSystemMessage("Bạn là một chuyên gia phân tích da. Bạn chỉ được phép trả lời các câu hỏi liên quan đến chăm sóc da, phân tích da, sản phẩm dưỡng da, thói quen skincare và các vấn đề liên quan đến làn da. Nếu người dùng hỏi về bất kỳ chủ đề nào không liên quan đến da (ví dụ: lập trình, trò chơi, toán học, v.v), hãy từ chối lịch sự với lý do đó không thuộc chuyên môn của bạn. Trả lời bằng phong cách thân thiện, ngắn gọn, rõ ràng và hoàn toàn bằng tiếng Việt. Không bao giờ vượt ra ngoài vai trò chuyên gia da liễu."),
+                ChatRequestSystemMessage("Bạn là một chuyên gia phân tích da. Trả lời bằng tiếng Việt, trình bày thân thiện và rõ ràng theo định dạng được yêu cầu."),
                 ChatRequestUserMessage.fromContentItems(contentItems)
             )
 
@@ -60,7 +62,11 @@ class SkinAnalysisRepository(private val context: Context) {
             val response: ChatCompletions = client.complete(options)
             val fullText = response.choice.message.content.trim()
 
+            Log.d(TAG, "AI Raw Response: $fullText")
+
             val parsedResult = parseTextToSkinResult(fullText)
+
+            Log.d(TAG, "Parsed Result: $parsedResult")
 
             parsedResult?.let {
                 SkinAnalysisStorage().saveAnalysisResult(it)
@@ -167,22 +173,49 @@ class SkinAnalysisRepository(private val context: Context) {
 
 
     fun formatTextForDisplay(text: String): String {
-        fun formatList(key: String, title: String): String {
+        fun extractList(key: String): List<String> {
             val regex = Regex("""$key:\s*\[(.*?)\]""", RegexOption.DOT_MATCHES_ALL)
-            val match = regex.find(text) ?: return ""
-            val items = match.groupValues[1].split(",").map { it.trim().replace("\"", "") }
-            return items.joinToString("\n- ", prefix = "\n$title:\n- ")
+            val match = regex.find(text) ?: return emptyList()
+            return match.groupValues[1]
+                .split(",")
+                .map { it.trim().removeSurrounding("\"").removePrefix("-").trim() }
+                .filter { it.isNotEmpty() }
+        }
+
+        fun extractField(key: String): String {
+            val regex = Regex("""$key:\s*(.+?)(\n|$)""", RegexOption.DOT_MATCHES_ALL)
+            return regex.find(text)?.groupValues?.get(1)?.trim() ?: ""
         }
 
         return buildString {
-            append(text.replace("skinType:", "\n• Loại da:")
-                .replace("hydrationLevel:", "• Độ ẩm:")
-                .replace("oilLevel:", "• Độ dầu:")
-                .replace("overallCondition:", "• Tình trạng tổng thể:")
-            )
-            append(formatList("concerns", "• Vấn đề da"))
-            append(formatList("recommendations", "• Gợi ý chăm sóc"))
-            append(formatList("tips", "• Mẹo"))
+            appendLine("• **Loại da**: ${extractField("skinType")}")
+            appendLine("• **Độ ẩm**: ${extractField("hydrationLevel")}")
+            appendLine("• **Độ dầu**: ${extractField("oilLevel")}")
+            appendLine("• **Tình trạng tổng thể**: ${extractField("overallCondition")}")
+
+            val concerns = extractList("concerns")
+            if (concerns.isNotEmpty()) {
+                appendLine("\n• **Vấn đề da:**")
+                concerns.forEach { appendLine("- $it") }
+            }
+
+            val recommendations = extractList("recommendations")
+            if (recommendations.isNotEmpty()) {
+                appendLine("\n• **Gợi ý chăm sóc:**")
+                recommendations.forEach { appendLine("- $it") }
+            }
+
+            val tips = extractList("tips")
+            if (tips.isNotEmpty()) {
+                appendLine("\n• **Mẹo:**")
+                tips.forEach { appendLine("- $it") }
+            }
+
+            val products = extractList("recommendedProducts")
+            if (products.isNotEmpty()) {
+                appendLine("\n• **Sản phẩm đề xuất:**")
+                products.forEach { appendLine("- $it") }
+            }
         }.trim()
     }
 }

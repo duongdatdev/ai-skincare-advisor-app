@@ -1,7 +1,7 @@
 package com.proteam.aiskincareadvisor.data.repository
 
 import com.proteam.aiskincareadvisor.data.api.AIClient
-import com.proteam.aiskincareadvisor.data.api.ChatModels
+import com.proteam.aiskincareadvisor.data.model.ChatModels
 import com.azure.ai.inference.models.ChatCompletions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
