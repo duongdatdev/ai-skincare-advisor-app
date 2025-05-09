@@ -33,18 +33,11 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.proteam.aiskincareadvisor.R
+import com.proteam.aiskincareadvisor.data.model.Product
+import com.proteam.aiskincareadvisor.data.viewmodel.SkinHistoryViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.tasks.await
-
-data class Product(
-    val id: String = "",
-    val name: String = "",
-    val category: String = "",
-    val skinTypes: List<String> = emptyList(),
-    val price: String = "",
-    val description: String = "",
-    val imageUrl: String = "",
-    val buyLink: String = ""
-)
+import kotlin.text.get
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,7 +49,11 @@ fun ProductScreen() {
     var selectedCategory by remember { mutableStateOf("All") }
     val scrollState = rememberScrollState()
 
-    // Colors
+    val skinViewModel: SkinHistoryViewModel = viewModel()
+    val latestResult by skinViewModel.latestResult.collectAsState()
+    var recommendedProducts by remember { mutableStateOf<List<Product>>(emptyList()) }
+
+        // Colors
     val primaryColor = Color(0xFF4CAF50)
     val backgroundColor = Color(0xFFF8F8F8)
     val cardColor = Color.White
@@ -77,12 +74,23 @@ fun ProductScreen() {
         }
     }
 
-    // Recommended products (different from selected category)
-    val recommendedProducts = remember(selectedCategory, products) {
-        if (selectedCategory == "All" || products.isEmpty()) {
-            emptyList()
-        } else {
-            products.filter { it.category != selectedCategory }.take(4)
+    LaunchedEffect(latestResult) {
+        if (latestResult?.recommendedProductIds?.isNotEmpty() == true) {
+            val db = FirebaseFirestore.getInstance()
+            val productsList = mutableListOf<Product>()
+
+            for (productId in latestResult!!.recommendedProductIds) {
+                try {
+                    val document = db.collection("products").document(productId).get().await()
+                    document.toObject(Product::class.java)?.let {
+                        productsList.add(it.copy(id = document.id))
+                    }
+                } catch (e: Exception) {
+                    // Handle error
+                }
+            }
+
+            recommendedProducts = productsList
         }
     }
 

@@ -8,6 +8,7 @@ data class SkinAnalysisResult(
     val concerns: List<String> = emptyList(),
     val recommendations: List<String> = emptyList(),
     val tips: List<String> = emptyList(),
+    val recommendedProductIds: List<String> = emptyList(),
     val timestamp: Long = System.currentTimeMillis()
 )
 
