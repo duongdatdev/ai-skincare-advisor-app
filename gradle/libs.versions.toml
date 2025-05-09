@@ -3,6 +3,8 @@ agp = "8.9.2"
 azureAiInference = "1.0.0-beta.4"
 coilCompose = "2.4.0"
 converterGson = "2.9.0"
+firebaseBom = "33.13.0"
+firebaseFirestoreKtx = "25.1.4"
 kotlin = "2.0.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -27,6 +29,9 @@ androidx-navigation-compose-v275 = { module = "androidx.navigation:navigation-co
 azure-ai-inference = { module = "com.azure:azure-ai-inference", version.ref = "azureAiInference" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
