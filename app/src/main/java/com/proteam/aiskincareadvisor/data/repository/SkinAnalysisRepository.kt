@@ -51,6 +51,7 @@ class SkinAnalysisRepository(private val context: Context) {
                 SkinAnalysisStorage().saveAnalysisResult(it)
             }
 
+
             val cleanedText = formatTextForDisplay(fullText)
             Result.success(cleanedText)
         } catch (e: Exception) {

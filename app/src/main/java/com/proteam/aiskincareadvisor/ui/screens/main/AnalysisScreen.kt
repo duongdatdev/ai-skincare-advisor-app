@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.proteam.aiskincareadvisor.R
 import com.proteam.aiskincareadvisor.data.viewmodel.SkinHistoryViewModel
 import java.text.SimpleDateFormat
@@ -26,7 +27,7 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnalysisScreen(onNavigateToAnalysis: () -> Unit) {
+fun AnalysisScreen(navController: NavController, onNavigateToAnalysis: () -> Unit) {
     val viewModel: SkinHistoryViewModel = viewModel()
     val latestResult by viewModel.latestResult.collectAsState()
 
@@ -38,10 +39,21 @@ fun AnalysisScreen(onNavigateToAnalysis: () -> Unit) {
                 .background(Color(0xFFF5F5F5))
         ) {
             item { LastScanHeader(latestResult?.timestamp) }
-            item { SkinHealthSummarySection(latestResult?.hydrationLevel, latestResult?.oilLevel, latestResult?.overallCondition) }
-            item { DetailedBreakdownSection(latestResult?.skinType, latestResult?.concerns ?: emptyList()) }
+            item {
+                SkinHealthSummarySection(
+                    latestResult?.hydrationLevel,
+                    latestResult?.oilLevel,
+                    latestResult?.overallCondition
+                )
+            }
+            item {
+                DetailedBreakdownSection(
+                    latestResult?.skinType,
+                    latestResult?.concerns ?: emptyList()
+                )
+            }
             item { ReanalyzeButton(onReanalyze = onNavigateToAnalysis) }
-            item { ViewRoutineRecommendationsLink() }
+            item { ViewRoutineRecommendationsLink { navController.navigate("routine") } }
             item { TipsAndInsightsSection(latestResult?.tips ?: emptyList()) }
             item { Spacer(modifier = Modifier.height(16.dp)) }
         }
@@ -174,7 +186,7 @@ fun ReanalyzeButton(onReanalyze: () -> Unit) {
 }
 
 @Composable
-fun ViewRoutineRecommendationsLink() {
+fun ViewRoutineRecommendationsLink(onClick: () -> Unit) {
     Text(
         text = "Xem gợi ý chăm sóc da",
         fontSize = 16.sp,
@@ -182,9 +194,10 @@ fun ViewRoutineRecommendationsLink() {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable { }
+            .clickable { onClick() }
     )
 }
+
 
 @Composable
 fun TipsAndInsightsSection(tips: List<String>) {

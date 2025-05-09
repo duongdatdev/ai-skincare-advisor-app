@@ -93,9 +93,10 @@ fun MainScreen() {
             startDestination = "home",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("home") { HomeScreen() }
+            composable("home") { HomeScreen(navController) }
             composable("analysis") {
                 AnalysisScreen(
+                    navController = navController,
                     onNavigateToAnalysis = {
                         navController.navigate("skin_analysis")
                     }
@@ -110,6 +111,9 @@ fun MainScreen() {
                 ChatScreen(
                     onBack = { navController.popBackStack() }
                 )
+            }
+            composable("routine") {
+                RoutineScreen()
             }
         }
     }
