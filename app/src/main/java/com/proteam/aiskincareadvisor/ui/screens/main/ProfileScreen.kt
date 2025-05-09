@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.border
 import androidx.compose.runtime.remember
 import androidx.navigation.NavController
-import com.google.firebase.auth.FirebaseAuth
 import com.proteam.aiskincareadvisor.R
 import com.proteam.aiskincareadvisor.data.auth.FirebaseAuthHelper
 

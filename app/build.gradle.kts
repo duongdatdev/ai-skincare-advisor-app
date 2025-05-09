@@ -99,8 +99,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     // Firebase Authentication
-    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
-    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation(libs.firebase.bom)
+    implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
     
     // Play Integrity API for reCAPTCHA verification
     implementation("com.google.android.recaptcha:recaptcha:18.4.0")
@@ -121,5 +121,7 @@ dependencies {
 
     implementation(libs.azure.ai.inference)
     implementation (libs.coil.compose)
+
+    implementation (libs.firebase.firestore.ktx)
 
 }
