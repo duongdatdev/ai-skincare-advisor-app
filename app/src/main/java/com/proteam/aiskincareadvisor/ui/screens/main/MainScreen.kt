@@ -11,13 +11,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import com.proteam.aiskincareadvisor.R
 import com.proteam.aiskincareadvisor.ui.screens.analysis.SkinAnalysisScreen
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(onLogout: () -> Unit) {
+
     val navController = rememberNavController()
     val screens = listOf(
         BottomNavItem("home", "Home", ImageVector.vectorResource(id = R.drawable.ic_home)),
@@ -105,12 +108,16 @@ fun MainScreen() {
                 SkinAnalysisScreen()
             }
             composable("products") { ProductScreen() }
-            composable("profile") { ProfileScreen(navController = navController) }
+            composable("profile") { ProfileScreen(navController = navController,onLogout = onLogout) }
             composable("chat") {
                 ChatScreen(
                     onBack = { navController.popBackStack() }
                 )
             }
+            composable("change_password") {
+                ChangePasswordScreen(navController = navController)
+            }
+
         }
     }
 }

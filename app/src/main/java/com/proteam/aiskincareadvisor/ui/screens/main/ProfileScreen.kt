@@ -11,38 +11,49 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.border
-import androidx.compose.runtime.remember
 import androidx.navigation.NavController
 import com.proteam.aiskincareadvisor.R
 import com.proteam.aiskincareadvisor.data.auth.FirebaseAuthHelper
+import androidx.compose.ui.graphics.Color
+import java.text.DateFormat
+import java.util.Date
 
 @Composable
-fun ProfileScreen( navController: NavController,
-                   authHelper: FirebaseAuthHelper = remember { FirebaseAuthHelper() }) {
-    val primaryColor = Color(0xFF6A43E8) // Using the same purple as in LoginScreen
+fun ProfileScreen(
+    navController: NavController,
+    onLogout: () -> Unit,
+    authHelper: FirebaseAuthHelper = remember { FirebaseAuthHelper() }
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val context = LocalContext.current
+    var isDarkMode by remember { mutableStateOf(false) }
+
+    // Get the saved preference in a real app
+    // val isDarkMode = remember { dataStore.getThemePreference().collectAsState() }
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F8F8))
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(bottom = 32.dp)
     ) {
         // Profile Header with Cover Image & Profile Image
         item {
-            ProfileHeaderWithCover(primaryColor)
+            ProfileHeaderWithCover(primaryColor, authHelper)
         }
 
         // Main Profile Sections
@@ -50,18 +61,124 @@ fun ProfileScreen( navController: NavController,
             Column(
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
-                // Skin Health Summary Cards
-                SkinHealthSummary()
+                // Account Settings Header
+                Text(
+                    text = "ACCOUNT SETTINGS",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+
+                // Personal Information Section
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(12.dp),
+                    shadowElevation = 2.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Person,
+                                contentDescription = null,
+                                tint = primaryColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Personal Information",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        val currentUser = authHelper.getCurrentUser()
+
+                        ProfileInfoItem(label = "Name", value = currentUser?.displayName ?: "Not set")
+                        ProfileInfoItem(label = "Email", value = currentUser?.email ?: "Not set")
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Menu Items
-                ProfileMenuSection(primaryColor)
+                // Security Section
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(12.dp),
+                    shadowElevation = 2.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Lock,
+                                contentDescription = null,
+                                tint = primaryColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Security",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        val currentUser = authHelper.getCurrentUser()
+                        ProfileInfoItem(label = "Email Verified", value = if (currentUser?.isEmailVerified == true) "Yes" else "No")
+                        ProfileInfoItem(label = "Account Created", value = currentUser?.metadata?.creationTimestamp?.let {
+                            DateFormat.getDateTimeInstance().format(Date(it))
+                        } ?: "Unknown")
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Button(
+                            onClick = {
+                                // Navigate to Change Password Screen
+                                navController.navigate("change_password")
+
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(text = "Change Password")
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Account Section
-                AccountSection(primaryColor)
+                // Dark Mode Toggle
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(12.dp),
+                    shadowElevation = 2.dp
+                ) {
+                    ProfileItemWithSwitch(
+                        icon = ImageVector.vectorResource(id = R.drawable.ic_dark_mode),
+                        title = "Dark Mode",
+                        isChecked = isDarkMode,
+                        onCheckedChange = { newValue ->
+                            isDarkMode = newValue
+                            // In a real app, you would save this preference:
+                            // viewModel.setDarkMode(newValue)
+                            // Or using DataStore:
+                            // scope.launch { dataStore.saveThemePreference(newValue) }
+                        },
+                        primaryColor = primaryColor,
+                        showDivider = false
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -70,14 +187,10 @@ fun ProfileScreen( navController: NavController,
                     onClick = {
                         // Use the helper method to sign out
                         authHelper.signOut()
-
-                        // Navigate to login screen
-                        navController.navigate("login") {
-                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                        }
+                        onLogout()
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252)),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
@@ -91,15 +204,35 @@ fun ProfileScreen( navController: NavController,
                         fontWeight = FontWeight.Bold
                     )
                 }
-
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
 }
 
 @Composable
-fun ProfileHeaderWithCover(primaryColor: Color) {
+fun ProfileInfoItem(label: String, value: String) {
+    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Text(
+            text = value,
+            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+
+    HorizontalDivider(
+        thickness = 0.5.dp,
+        color = MaterialTheme.colorScheme.outlineVariant
+    )
+}
+
+@Composable
+fun ProfileHeaderWithCover(primaryColor: Color, authHelper: FirebaseAuthHelper) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -127,22 +260,34 @@ fun ProfileHeaderWithCover(primaryColor: Color) {
                 modifier = Modifier
                     .size(100.dp)
                     .clip(CircleShape)
-                    .background(Color.White, CircleShape)
-                    .border(3.dp, Color.White, CircleShape)
+                    .background(MaterialTheme.colorScheme.surface, CircleShape)
+                    .border(3.dp, MaterialTheme.colorScheme.surface, CircleShape)
             )
 
-            Text(
-                text = "Sarah Johnson",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            val currentUser = authHelper.getCurrentUser()
+            if (currentUser != null) {
+                Text(
+                    text = currentUser.displayName ?: "User",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
 
-            Text(
-                text = "sarah.johnson@email.com",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
+                Text(
+                    text = currentUser.email ?: "",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Text(
+                    text = "Guest User",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
         }
 
         // Edit Profile Button
@@ -152,185 +297,13 @@ fun ProfileHeaderWithCover(primaryColor: Color) {
                 .align(Alignment.TopEnd)
                 .padding(8.dp)
                 .size(36.dp)
-                .background(Color.White.copy(alpha = 0.8f), CircleShape)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), CircleShape)
         ) {
             Icon(
                 imageVector = Icons.Default.Edit,
                 contentDescription = "Edit Profile",
                 tint = primaryColor,
                 modifier = Modifier.size(20.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun SkinHealthSummary() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "SKIN HEALTH",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                SkinMetricItem("Hydration", "75%", Color(0xFF2196F3))
-                SkinMetricItem("Oil Level", "Normal", Color(0xFFFFC107))
-                SkinMetricItem("Overall", "Good", Color(0xFF4CAF50))
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedButton(
-                onClick = { /* View full skin analysis */ },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFF2196F3)
-                )
-            ) {
-                Text("View Full Analysis", fontWeight = FontWeight.Medium)
-            }
-        }
-    }
-}
-
-@Composable
-fun SkinMetricItem(label: String, value: String, color: Color) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CircularProgressIndicator(
-            progress = 0.75f, // This would be dynamic based on the value
-            modifier = Modifier.size(50.dp),
-            color = color,
-            strokeWidth = 4.dp
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = label,
-            fontSize = 12.sp,
-            color = Color.Gray
-        )
-
-        Text(
-            text = value,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
-@Composable
-fun ProfileMenuSection(primaryColor: Color) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "MY SKINCARE",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            ProfileMenuItem(
-                icon = Icons.Outlined.DateRange,
-                title = "My Routines",
-                subtitle = "View your daily skincare routines",
-                primaryColor = primaryColor
-            )
-
-            ProfileMenuItem(
-                icon = Icons.Outlined.FavoriteBorder,
-                title = "My Favorites",
-                subtitle = "Products you've saved",
-                primaryColor = primaryColor
-            )
-
-            ProfileMenuItem(
-                icon = Icons.Outlined.Info,
-                title = "Order History",
-                subtitle = "View your past purchases",
-                primaryColor = primaryColor
-            )
-
-            ProfileMenuItem(
-                icon = Icons.Outlined.ShoppingCart,
-                title = "Current Orders",
-                subtitle = "Track your deliveries",
-                primaryColor = primaryColor,
-                showDivider = false
-            )
-        }
-    }
-}
-
-@Composable
-fun AccountSection(primaryColor: Color) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "ACCOUNT SETTINGS",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            ProfileMenuItem(
-                icon = Icons.Outlined.Person,
-                title = "Personal Information",
-                subtitle = "Manage your account details",
-                primaryColor = primaryColor
-            )
-
-            ProfileMenuItem(
-                icon = Icons.Outlined.Lock,
-                title = "Security",
-                subtitle = "Password & privacy",
-                primaryColor = primaryColor
-            )
-
-            ProfileMenuItem(
-                icon = Icons.Outlined.Notifications,
-                title = "Notifications",
-                subtitle = "Customize notification preferences",
-                primaryColor = primaryColor
-            )
-
-            ProfileItemWithSwitch(
-                icon = ImageVector.vectorResource(id = R.drawable.ic_dark_mode),
-                title = "Dark Mode",
-                isChecked = false,
-                onCheckedChange = { /* Handle dark mode toggle */ },
-                primaryColor = primaryColor,
-                showDivider = false
             )
         }
     }
@@ -349,7 +322,7 @@ fun ProfileMenuItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { /* Handle click */ }
-                .padding(vertical = 12.dp),
+                .padding(vertical = 12.dp, horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -365,29 +338,30 @@ fun ProfileMenuItem(
                 Text(
                     text = title,
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
                     text = subtitle,
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             Icon(
-                imageVector = Icons.Default.ArrowDropDown,
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = null,
-                tint = Color.Gray,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
         }
 
         if (showDivider) {
-            Divider(
-                modifier = Modifier.padding(start = 40.dp),
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 56.dp, end = 16.dp),
                 thickness = 0.5.dp,
-                color = Color(0xFFEEEEEE)
+                color = MaterialTheme.colorScheme.outlineVariant
             )
         }
     }
@@ -406,7 +380,7 @@ fun ProfileItemWithSwitch(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
+                .padding(vertical = 12.dp, horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -422,7 +396,8 @@ fun ProfileItemWithSwitch(
                 Text(
                     text = title,
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -431,16 +406,18 @@ fun ProfileItemWithSwitch(
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = primaryColor,
-                    checkedTrackColor = primaryColor.copy(alpha = 0.5f)
+                    checkedTrackColor = primaryColor.copy(alpha = 0.5f),
+                    uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             )
         }
 
         if (showDivider) {
-            Divider(
-                modifier = Modifier.padding(start = 40.dp),
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 56.dp, end = 16.dp),
                 thickness = 0.5.dp,
-                color = Color(0xFFEEEEEE)
+                color = MaterialTheme.colorScheme.outlineVariant
             )
         }
     }

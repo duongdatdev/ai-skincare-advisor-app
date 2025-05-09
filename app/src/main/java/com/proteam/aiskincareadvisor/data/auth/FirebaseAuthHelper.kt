@@ -1,6 +1,7 @@
 package com.proteam.aiskincareadvisor.data.auth
 
 import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
@@ -65,6 +66,31 @@ class FirebaseAuthHelper {
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+    // Add this method for password change functionality
+    fun reauthenticateAndChangePassword(
+        currentPassword: String,
+        newPassword: String,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        val user = auth.currentUser
+        if (user != null && user.email != null) {
+            // Create credential with current email and password
+            val credential = EmailAuthProvider.getCredential(user.email!!, currentPassword)
+
+            // Reauthenticate the user
+            user.reauthenticate(credential)
+                .addOnSuccessListener {
+                    // After successful reauthentication, update the password
+                    user.updatePassword(newPassword)
+                        .addOnSuccessListener { onSuccess() }
+                        .addOnFailureListener { onFailure(it) }
+                }
+                .addOnFailureListener { onFailure(it) }
+        } else {
+            onFailure(Exception("User not authenticated or email not available"))
         }
     }
 }
