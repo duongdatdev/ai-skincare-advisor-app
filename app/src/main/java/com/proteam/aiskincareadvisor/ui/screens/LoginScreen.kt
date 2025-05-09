@@ -57,28 +57,33 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuc
         if (result.resultCode == Activity.RESULT_OK) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
             try {
+                // Get Google account
                 val account = task.getResult(ApiException::class.java)
-                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+                account?.idToken?.let { idToken ->
+                    // Create credential
+                    val credential = GoogleAuthProvider.getCredential(idToken, null)
 
-                // Use your Firebase Auth Helper to sign in with Google
-                coroutineScope.launch {
-                    isLoading = true
-                    try {
-                        val result = firebaseAuthHelper.signInWithCredential(credential)
-                        result.fold(
-                            onSuccess = { onLoginSuccess() },
-                            onFailure = { e ->
-                                errorMessage = e.message ?: "Google Sign-In failed"
+                    // Sign in with credential
+                    coroutineScope.launch {
+                        isLoading = true
+                        try {
+                            val authResult = firebaseAuthHelper.signInWithCredential(credential)
+                            if (authResult.isSuccess) {
+                                onLoginSuccess()
+                            } else {
+                                errorMessage = authResult.exceptionOrNull()?.message ?: "Google Sign-In failed"
                             }
-                        )
-                    } catch (e: Exception) {
-                        errorMessage = e.message ?: "An error occurred"
-                    } finally {
-                        isLoading = false
+                        } catch (e: Exception) {
+                            errorMessage = e.message ?: "Authentication failed"
+                        } finally {
+                            isLoading = false
+                        }
                     }
+                } ?: run {
+                    errorMessage = "Google sign in failed: ID Token is null"
                 }
             } catch (e: ApiException) {
-                errorMessage = "Google sign in failed: ${e.statusCode}"
+                errorMessage = "Google sign in failed: ${e.message}"
             }
         }
     }
@@ -237,20 +242,16 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuc
                 fontWeight = FontWeight.Bold,
                 color = primaryColor,
                 modifier = Modifier.clickable {
-                    // Handle forgot password
+                    // In the forgot password click handler:
                     if (email.isNotEmpty()) {
                         coroutineScope.launch {
                             isLoading = true
                             try {
-                                when (val result = firebaseAuthHelper.resetPassword(email)) {
-                                    is Result.Companion -> {
-                                        errorMessage = "Password reset email sent to $email"
-                                    }
-
-                                    else -> {
-                                        errorMessage =
-                                            result.exceptionOrNull()?.message ?: "Failed to send reset email"
-                                    }
+                                val result = firebaseAuthHelper.resetPassword(email)
+                                if (result.isSuccess) {
+                                    errorMessage = "Password reset email sent to $email"
+                                } else {
+                                    errorMessage = result.exceptionOrNull()?.message ?: "Failed to send reset email"
                                 }
                             } catch (e: Exception) {
                                 errorMessage = e.message ?: "An error occurred"
@@ -344,9 +345,9 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuc
         Spacer(modifier = Modifier.height(16.dp))
 
 
-        // Social login buttons
-        Button(
+        // In LoginScreen.kt, replace the Google Sign-In button and its onClick handler:
 
+        Button(
             onClick = {
                 val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                     .requestIdToken(context.getString(R.string.default_web_client_id))
@@ -354,7 +355,10 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuc
                     .build()
 
                 val googleSignInClient = GoogleSignIn.getClient(context, gso)
-                launcher.launch(googleSignInClient.signInIntent)
+                // Clear previous account before signing in again
+                googleSignInClient.signOut().addOnCompleteListener {
+                    launcher.launch(googleSignInClient.signInIntent)
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -370,7 +374,7 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuc
                 horizontalArrangement = Arrangement.Center
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.placeholder),
+                    painter = painterResource(id = R.drawable.ic_google), // Make sure this resource exists
                     contentDescription = "Google",
                     tint = Color.Unspecified,
                     modifier = Modifier.size(20.dp)
