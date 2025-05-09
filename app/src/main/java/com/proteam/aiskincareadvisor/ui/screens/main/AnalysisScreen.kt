@@ -1,5 +1,6 @@
 package com.proteam.aiskincareadvisor.ui.screens.main
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -31,12 +32,15 @@ fun AnalysisScreen(navController: NavController, onNavigateToAnalysis: () -> Uni
     val viewModel: SkinHistoryViewModel = viewModel()
     val latestResult by viewModel.latestResult.collectAsState()
 
-    Scaffold { paddingValues ->
+    Scaffold(
+
+    ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF5F5F5))
+                .background(Color(0xFFF5F5F5)),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item { LastScanHeader(latestResult?.timestamp) }
             item {
@@ -47,13 +51,22 @@ fun AnalysisScreen(navController: NavController, onNavigateToAnalysis: () -> Uni
                 )
             }
             item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ReanalyzeButton(onReanalyze = onNavigateToAnalysis)
+                    ViewRoutineRecommendationsButton { navController.navigate("routine") }
+                }
+            }
+            item {
                 DetailedBreakdownSection(
                     latestResult?.skinType,
                     latestResult?.concerns ?: emptyList()
                 )
             }
-            item { ReanalyzeButton(onReanalyze = onNavigateToAnalysis) }
-            item { ViewRoutineRecommendationsLink { navController.navigate("routine") } }
             item { TipsAndInsightsSection(latestResult?.tips ?: emptyList()) }
             item { Spacer(modifier = Modifier.height(16.dp)) }
         }
@@ -67,97 +80,140 @@ fun LastScanHeader(timestamp: Long?) {
         sdf.format(Date(it))
     } ?: "Không có dữ liệu"
 
-    Text(
-        text = "Lần phân tích gần nhất\n$formattedTime",
-        fontSize = 14.sp,
-        color = Color.Gray,
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
-    )
-}
-
-@Composable
-fun SkinHealthSummarySection(hydration: String?, oil: String?, condition: String?) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(8.dp)
     ) {
-        Text(
-            text = "TỔNG QUAN LÀN DA",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Gray
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            SummaryItem("Độ ẩm", hydration ?: "-", Color(0xFF2196F3))
-            SummaryItem("Độ dầu", oil ?: "-", Color(0xFFFFC107))
-            SummaryItem("Tổng thể", condition ?: "-", Color(0xFF4CAF50))
+            Text(
+                text = "Lần phân tích gần nhất",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = formattedTime,
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
         }
     }
 }
 
 @Composable
-fun SummaryItem(label: String, value: String, circleColor: Color) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+fun SkinHealthSummarySection(
+    hydration: String?,
+    oil: String?,
+    condition: String?
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF3EFFF))
     ) {
-        Box(
-            modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape)
-                .background(circleColor)
-        ) {}
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = label, fontSize = 14.sp, color = Color.Gray)
-        Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                text = "TỔNG QUAN LÀN DA",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF7C3AED) // tím đậm
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+
+            SummaryLine("Độ ẩm", hydration ?: "Không có dữ liệu", Color(0xFF2196F3))
+            SummaryLine("Độ dầu", oil ?: "Không có dữ liệu", Color(0xFFFFC107))
+            SummaryLine("Tổng thể", condition ?: "Không có dữ liệu", Color(0xFF4CAF50))
+        }
     }
 }
+
+@Composable
+fun SummaryLine(label: String, value: String, valueColor: Color) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = "$label: ",
+            fontSize = 14.sp,
+            color = Color.Gray,
+            modifier = Modifier.width(80.dp)
+        )
+        Text(
+            text = value,
+            fontSize = 14.sp,
+            color = valueColor,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+
 
 @Composable
 fun DetailedBreakdownSection(skinType: String?, concerns: List<String>) {
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
-            .padding(16.dp)
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(8.dp)
     ) {
-        Text(
-            text = "CHI TIẾT PHÂN TÍCH",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Gray
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        skinType?.let {
-            BreakdownItem("Loại da", it)
-        }
-        if (concerns.isNotEmpty()) {
-            BreakdownItem("Vấn đề da", concerns.joinToString(", "))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "CHI TIẾT PHÂN TÍCH",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF7C3AED)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            skinType?.let {
+                BreakdownItem("Loại da", it, R.drawable.ic_lock) // Update with appropriate icon
+            }
+            if (concerns.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                BreakdownItem("Vấn đề da", concerns.joinToString(", "), R.drawable.ic_lock) // Update with appropriate icon
+            }
         }
     }
 }
 
 @Composable
-fun BreakdownItem(label: String, value: String) {
+fun BreakdownItem(label: String, value: String, iconResource: Int) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            painter = painterResource(id = R.drawable.ic_lock),
-            contentDescription = label,
-            tint = Color.Gray,
-            modifier = Modifier.size(24.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFF0F0F0)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = iconResource),
+                contentDescription = label,
+                tint = Color(0xFF7C3AED),
+                modifier = Modifier.size(24.dp)
+            )
+        }
         Spacer(modifier = Modifier.width(16.dp))
         Column {
             Text(text = label, fontSize = 16.sp, fontWeight = FontWeight.Medium)
@@ -167,15 +223,79 @@ fun BreakdownItem(label: String, value: String) {
 }
 
 @Composable
+fun TipsAndInsightsSection(tips: List<String>) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "MẸO & GỢI Ý",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF7C3AED)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val displayTips = if (tips.isNotEmpty()) tips else listOf(
+                "Luôn dùng kem chống nắng hàng ngày.",
+                "Uống đủ 2 lít nước mỗi ngày để giữ ẩm cho da."
+            )
+
+            displayTips.forEach {
+                TipItem(it)
+                if (it != displayTips.last()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TipItem(tip: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF7C3AED))
+                .align(Alignment.CenterVertically)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = tip,
+            fontSize = 14.sp,
+            color = Color.Black,
+            lineHeight = 20.sp
+        )
+    }
+}
+
+@Composable
 fun ReanalyzeButton(onReanalyze: () -> Unit) {
     Button(
         onClick = onReanalyze,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
-        shape = RoundedCornerShape(8.dp)
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED)),
+        shape = RoundedCornerShape(8.dp),
+        contentPadding = PaddingValues(vertical = 12.dp)
     ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_camera),
+            contentDescription = null,
+            tint = Color.White
+        )
+        Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = "Phân tích lại",
             fontSize = 16.sp,
@@ -186,58 +306,24 @@ fun ReanalyzeButton(onReanalyze: () -> Unit) {
 }
 
 @Composable
-fun ViewRoutineRecommendationsLink(onClick: () -> Unit) {
-    Text(
-        text = "Xem gợi ý chăm sóc da",
-        fontSize = 16.sp,
-        color = Color(0xFF2196F3),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable { onClick() }
-    )
-}
-
-
-@Composable
-fun TipsAndInsightsSection(tips: List<String>) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "MẸO & GỢI Ý",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Gray
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        if (tips.isNotEmpty()) {
-            tips.forEach { TipItem(it) }
-        } else {
-            TipItem("Luôn dùng kem chống nắng hàng ngày.")
-            TipItem("Uống đủ 2 lít nước mỗi ngày để giữ ẩm cho da.")
-        }
-    }
-}
-
-@Composable
-fun TipItem(tip: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+fun ViewRoutineRecommendationsButton(onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFF7C3AED)),
+        contentPadding = PaddingValues(vertical = 12.dp)
     ) {
         Icon(
-            painter = painterResource(id = R.drawable.ic_lock),
-            contentDescription = "Tip",
-            tint = Color.Gray,
-            modifier = Modifier.size(24.dp)
+            painter = painterResource(id = R.drawable.ic_spa),
+            contentDescription = null,
+            tint = Color(0xFF7C3AED)
         )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(text = tip, fontSize = 14.sp, color = Color.Black)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "Xem gợi ý chăm sóc da",
+            fontSize = 16.sp,
+            color = Color(0xFF7C3AED)
+        )
     }
 }
