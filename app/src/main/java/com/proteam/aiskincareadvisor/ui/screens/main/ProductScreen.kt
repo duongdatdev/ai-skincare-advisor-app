@@ -1,10 +1,6 @@
 package com.proteam.aiskincareadvisor.ui.screens.main
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -24,7 +20,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -82,10 +77,10 @@ fun ProductScreen() {
         }
     }
 
-    // Recommended products
+    // Recommended products (different from selected category)
     val recommendedProducts = remember(selectedCategory, products) {
         if (selectedCategory == "All" || products.isEmpty()) {
-            products.take(4)
+            emptyList()
         } else {
             products.filter { it.category != selectedCategory }.take(4)
         }
@@ -141,13 +136,17 @@ fun ProductScreen() {
                 .padding(paddingValues)
                 .background(backgroundColor)
         ) {
-            // Loading, Error, Empty states
             when {
-                isLoading -> LoadingState()
-                error != null -> ErrorState(error!!) { isLoading = true; error = null }
-                products.isEmpty() -> EmptyState()
+                isLoading -> {
+                    LoadingState()
+                }
+                error != null -> {
+                    ErrorState(error!!) { isLoading = true; error = null }
+                }
+                products.isEmpty() -> {
+                    EmptyState()
+                }
                 else -> {
-                    // Main content
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -164,17 +163,40 @@ fun ProductScreen() {
                         // Filter and Sort Row
                         FilterSortRow(primaryColor)
 
-                        // Product Grid with filtered products
-                        ProductGrid(
-                            products = filteredProducts,
-                            primaryColor = primaryColor,
-                            cardColor = cardColor,
-                            textPrimaryColor = textPrimaryColor,
-                            textSecondaryColor = textSecondaryColor
+                        // Main Title
+                        Text(
+                            text = if (selectedCategory == "All") "All Products" else selectedCategory,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimaryColor,
+                            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)
                         )
 
-                        // Recommended Section
-                        if (recommendedProducts.isNotEmpty() && recommendedProducts.size > 1) {
+                        // Product Grid with fixed height
+                        if (filteredProducts.isNotEmpty()) {
+                            ProductGrid(
+                                products = filteredProducts,
+                                primaryColor = primaryColor,
+                                cardColor = cardColor,
+                                textPrimaryColor = textPrimaryColor,
+                                textSecondaryColor = textSecondaryColor
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No products in this category",
+                                    color = textSecondaryColor
+                                )
+                            }
+                        }
+
+                        // Recommended Section (only show if we have recommendations)
+                        if (recommendedProducts.isNotEmpty()) {
                             RecommendedSection(
                                 products = recommendedProducts,
                                 primaryColor = primaryColor,
@@ -184,7 +206,7 @@ fun ProductScreen() {
                             )
                         }
 
-                        // Bottom spacing
+                        // Bottom space
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
@@ -327,15 +349,14 @@ fun CategoryTabs(
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = category,
+                        fontSize = 14.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) Color.White else Color(0xFF757575),
-                        fontSize = 14.sp
+                        color = if (isSelected) Color.White else Color.Black
                     )
                 }
             }
@@ -402,14 +423,22 @@ fun ProductGrid(
     textPrimaryColor: Color,
     textSecondaryColor: Color
 ) {
+    // Calculate a reasonable height based on number of products
+    val gridHeight = when {
+        products.size <= 2 -> 230.dp  // Just one row
+        products.size <= 4 -> 460.dp  // Two rows
+        else -> 600.dp                // More rows with scrolling
+    }
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier
             .fillMaxWidth()
-            .height((products.size * 150).dp.coerceAtMost(550.dp)),
-        contentPadding = PaddingValues(16.dp),
+            .height(gridHeight)
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        userScrollEnabled = true// Disable scrolling for main grid
     ) {
         items(products.size) { index ->
             ProductCard(
@@ -510,16 +539,16 @@ fun ProductCard(
                 )
 
                 Button(
-                    onClick = { /* Handle add to cart */ },
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                    modifier = Modifier.height(32.dp),
-                    shape = RoundedCornerShape(16.dp)
+                    onClick = { /* Buy action */ },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = primaryColor
+                    ),
+                    modifier = Modifier.height(30.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "Add",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        text = "Buy",
+                        fontSize = 12.sp
                     )
                 }
             }
@@ -540,6 +569,7 @@ fun RecommendedSection(
             .fillMaxWidth()
             .padding(16.dp)
     ) {
+        // Section header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -563,15 +593,17 @@ fun RecommendedSection(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Fixed height grid with 2 items per row
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier = Modifier
                 .fillMaxWidth()
-                .height((products.size * 150).dp.coerceAtMost(300.dp)),
+                .height(230.dp), // Fixed height for 1 row
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            userScrollEnabled = false // Disable scrolling for recommended section
         ) {
-            items(products.size) { index ->
+            items(products.size.coerceAtMost(2)) { index -> // Limit to 2 items
                 ProductCard(
                     product = products[index],
                     primaryColor = primaryColor,
