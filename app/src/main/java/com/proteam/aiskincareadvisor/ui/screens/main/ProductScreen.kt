@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -38,6 +39,8 @@ import com.proteam.aiskincareadvisor.data.viewmodel.SkinHistoryViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.tasks.await
 import kotlin.text.get
+import androidx.compose.ui.window.Dialog
+import com.proteam.aiskincareadvisor.ui.components.ProductDetailDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -469,11 +472,12 @@ fun ProductCard(
     textSecondaryColor: Color
 ) {
     var isFavorite by remember { mutableStateOf(false) }
+    var showDetailDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* Handle product details */ },
+            .clickable { showDetailDialog = true },
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(12.dp)
@@ -561,6 +565,17 @@ fun ProductCard(
                 }
             }
         }
+    }
+    
+    // Show product detail dialog when clicked
+    if (showDetailDialog) {
+        ProductDetailDialog(
+            product = product,
+            primaryColor = primaryColor,
+            textPrimaryColor = textPrimaryColor,
+            textSecondaryColor = textSecondaryColor,
+            onDismiss = { showDetailDialog = false }
+        )
     }
 }
 

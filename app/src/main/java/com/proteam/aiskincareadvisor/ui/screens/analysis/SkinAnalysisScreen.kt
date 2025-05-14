@@ -34,9 +34,7 @@ import java.util.*
 @Composable
 fun SkinAnalysisScreen() {
     val context = LocalContext.current
-    val viewModel: SkinAnalysisViewModel = viewModel(
-        factory = SkinAnalysisViewModel.Factory(context)
-    )
+    val viewModel: SkinAnalysisViewModel = viewModel(factory = SkinAnalysisViewModel.Factory(context))
 
     val imageUri by viewModel.imageUri.collectAsState()
     val analysisResult by viewModel.analysisResult.collectAsState()
@@ -45,41 +43,22 @@ fun SkinAnalysisScreen() {
 
     val hasCameraPermission = remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
         )
     }
 
-    // Request permission launcher
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        hasCameraPermission.value = isGranted
+    ) { granted -> hasCameraPermission.value = granted }
+
+    val tempUri = remember { mutableStateOf<Uri?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) tempUri.value?.let(viewModel::setImage)
     }
 
-    // Temporary URI for camera capture
-    val tempUri = remember {
-        mutableStateOf<Uri?>(null)
-    }
-
-    // Camera launcher
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            tempUri.value?.let { uri ->
-                viewModel.setImage(uri)
-            }
-        }
-    }
-
-    // Gallery launcher
-    val galleryLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let { viewModel.setImage(it) }
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
+        it?.let(viewModel::setImage)
     }
 
     Column(
@@ -89,115 +68,82 @@ fun SkinAnalysisScreen() {
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "Skin Analysis",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
+        Text("Phân tích làn da", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(onClick = {
-                if (!hasCameraPermission.value) {
-                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                } else {
-                    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-                    val imageFile = File.createTempFile(
-                        "JPEG_${timeStamp}_",
-                        ".jpg",
-                        context.cacheDir
-                    )
-
-                    tempUri.value = FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        imageFile
-                    )
-
-                    val uri = FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        imageFile
-                    )
-
-                    tempUri.value = uri
-                    cameraLauncher.launch(uri)
-                }
-            }) {
-                Text("Take Photo")
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Button(
+                onClick = {
+                    if (!hasCameraPermission.value) {
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    } else {
+                        val imageFile = File.createTempFile("IMG_${System.currentTimeMillis()}", ".jpg", context.cacheDir)
+                        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", imageFile)
+                        tempUri.value = uri
+                        cameraLauncher.launch(uri)
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Chụp ảnh")
             }
 
-            Button(onClick = {
-                galleryLauncher.launch("image/*")
-            }) {
-                Text("Choose from Gallery")
+            Button(
+                onClick = { galleryLauncher.launch("image/*") },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Chọn từ thư viện")
             }
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
         imageUri?.let { uri ->
-            Box(
+            Card(
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
-                    .size(300.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .fillMaxWidth()
+                    .height(300.dp)
             ) {
                 Image(
                     painter = rememberAsyncImagePainter(uri),
-                    contentDescription = "Selected skin image",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = { viewModel.analyzeSkin() },
-                enabled = !isLoading
+                enabled = !isLoading,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Analyze Skin")
+                Text("Phân tích ngay")
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(50.dp)
-            )
+            CircularProgressIndicator()
         }
 
-        errorMessage?.let { error ->
-            Text(
-                text = error,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(16.dp)
-            )
+        errorMessage?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp))
         }
 
         analysisResult?.let { result ->
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "Analysis Results",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Kết quả phân tích", fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
-
                     Text(result)
                 }
             }

@@ -389,35 +389,6 @@ fun LoginScreen(onBack: () -> Unit, onRegisterClick: () -> Unit = {}, onLoginSuc
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Button(
-            onClick = { /* Handle Facebook login */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White
-            ),
-            border = BorderStroke(1.dp, Color(0xFFCCCCCC))
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.placeholder),
-                    contentDescription = "Facebook",
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "Continue with Facebook",
-                    color = Color(0xFF4A4A4A)
-                )
-            }
-        }
-
         Spacer(modifier = Modifier.weight(1f))
 
         // Register link
