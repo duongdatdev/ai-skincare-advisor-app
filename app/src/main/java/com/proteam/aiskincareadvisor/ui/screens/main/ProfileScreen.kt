@@ -29,6 +29,9 @@ import androidx.navigation.NavController
 import com.proteam.aiskincareadvisor.R
 import com.proteam.aiskincareadvisor.data.auth.FirebaseAuthHelper
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.proteam.aiskincareadvisor.data.preferences.ThemeMode
+import com.proteam.aiskincareadvisor.data.viewmodel.ThemeViewModel
 import java.text.DateFormat
 import java.util.Date
 
@@ -36,14 +39,22 @@ import java.util.Date
 fun ProfileScreen(
     navController: NavController,
     onLogout: () -> Unit,
-    authHelper: FirebaseAuthHelper = remember { FirebaseAuthHelper() }
+    authHelper: FirebaseAuthHelper = remember { FirebaseAuthHelper() },
+    themeViewModel: ThemeViewModel = viewModel()
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
     val context = LocalContext.current
-    var isDarkMode by remember { mutableStateOf(false) }
-
-    // Get the saved preference in a real app
-    // val isDarkMode = remember { dataStore.getThemePreference().collectAsState() }
+    
+    // Get theme preferences from ViewModel
+    val themeMode by remember { themeViewModel.themeMode }
+    val useDynamicColors by remember { themeViewModel.useDynamicColors }
+    
+    // Determine if dark mode is enabled
+    val isDarkMode = when (themeMode) {
+        ThemeMode.DARK -> true
+        ThemeMode.LIGHT -> false
+        ThemeMode.SYSTEM -> false // This is just for the UI switch state; actual theme follows system
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -158,26 +169,43 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Dark Mode Toggle
+                // Theme Settings Section
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(12.dp),
-                    shadowElevation = 2.dp
+                    shadowElevation = 2.dp,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    ProfileItemWithSwitch(
-                        icon = ImageVector.vectorResource(id = R.drawable.ic_dark_mode),
-                        title = "Dark Mode",
-                        isChecked = isDarkMode,
-                        onCheckedChange = { newValue ->
-                            isDarkMode = newValue
-                            // In a real app, you would save this preference:
-                            // viewModel.setDarkMode(newValue)
-                            // Or using DataStore:
-                            // scope.launch { dataStore.saveThemePreference(newValue) }
-                        },
-                        primaryColor = primaryColor,
-                        showDivider = false
-                    )
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Palette,
+                                contentDescription = null,
+                                tint = primaryColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Appearance",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        
+                        // Theme mode options
+                        ProfileItemWithSetting(
+                            icon = ImageVector.vectorResource(id = R.drawable.ic_dark_mode),
+                            title = "Theme Mode",
+                            onClick = {
+                                // Navigate to detailed theme settings
+                                navController.navigate("settings")
+                            }
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -368,57 +396,39 @@ fun ProfileMenuItem(
 }
 
 @Composable
-fun ProfileItemWithSwitch(
+fun ProfileItemWithSetting(
     icon: ImageVector,
     title: String,
-    isChecked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    primaryColor: Color,
-    showDivider: Boolean = true
+    onClick: () -> Unit
 ) {
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = primaryColor,
-                modifier = Modifier.size(24.dp)
-            )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
 
-            Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(16.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
+        Text(
+            text = title,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
 
-            Switch(
-                checked = isChecked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = primaryColor,
-                    checkedTrackColor = primaryColor.copy(alpha = 0.5f),
-                    uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            )
-        }
-
-        if (showDivider) {
-            HorizontalDivider(
-                modifier = Modifier.padding(start = 56.dp, end = 16.dp),
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant
-            )
-        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+            contentDescription = "Navigate to settings",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
