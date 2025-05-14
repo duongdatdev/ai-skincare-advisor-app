@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,8 +32,8 @@ fun SettingsScreen(
     themeViewModel: ThemeViewModel = viewModel(),
     onBack: () -> Unit
 ) {
-    val themeMode by remember { themeViewModel.themeMode }
-    val useDynamicColors by remember { themeViewModel.useDynamicColors }
+    val themeMode by themeViewModel.themeMode.collectAsState()
+    val useDynamicColors by themeViewModel.useDynamicColors.collectAsState()
     
     Scaffold(
         topBar = {
