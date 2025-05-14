@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -28,10 +30,17 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.google.firebase.firestore.FirebaseFirestore
 import com.proteam.aiskincareadvisor.R
+import com.proteam.aiskincareadvisor.data.model.Product
 import com.proteam.aiskincareadvisor.data.viewmodel.SkinHistoryViewModel
+import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.ui.window.Dialog
+import com.proteam.aiskincareadvisor.ui.components.ProductDetailDialog
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -73,9 +82,7 @@ fun HomeScreen(navController: NavController) {
 
         // Recommended products
         item {
-            RecommendedProductsSection(onSeeAllClick = {
-                navController.navigate("products")
-            })
+            RecommendedProductsSection(navController= navController)
         }
 
         // Tips and advice
@@ -303,95 +310,199 @@ fun QuickActionButton(
 }
 
 @Composable
-fun RecommendedProductsSection(onSeeAllClick: () -> Unit) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                "Sản phẩm gợi ý",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+fun RecommendedProductsSection(
+    modifier: Modifier = Modifier,
+    navController: NavController
+) {
+    val viewModel: SkinHistoryViewModel = viewModel()
+    val latestResult by viewModel.latestResult.collectAsState()
+    var recommendedProducts by remember { mutableStateOf<List<Product>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
 
-            TextButton(onClick = onSeeAllClick) {
+    // Fetch recommended products based on IDs from latest analysis
+    LaunchedEffect(latestResult) {
+        isLoading = true
+        if (latestResult?.recommendedProductIds?.isNotEmpty() == true) {
+            val db = FirebaseFirestore.getInstance()
+            val productsList = mutableListOf<Product>()
+
+            for (productId in latestResult!!.recommendedProductIds) {
+                try {
+                    val document = db.collection("products").document(productId).get().await()
+                    document.toObject(Product::class.java)?.let {
+                        productsList.add(it.copy(id = document.id))
+                    }
+                } catch (e: Exception) {
+                    // Handle error silently
+                }
+            }
+            recommendedProducts = productsList
+        }
+        isLoading = false
+    }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Section header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    "Xem tất cả",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
+                    text = "Sản phẩm gợi ý",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
                     color = Color(0xFF7C3AED)
                 )
+
+                TextButton(onClick = { navController.navigate("products") }) {
+                    Text(
+                        text = "Xem tất cả",
+                        fontSize = 14.sp,
+                        color = Color(0xFF7C3AED)
+                    )
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        // Sample products, replace with actual data from API or repository
-        val products = listOf(
-            "Kem Dưỡng Ẩm Neutrogena",
-            "Sữa Rửa Mặt Gentle Cleanser",
-            "Essence Snail Repair",
-            "Serum Vitamin C"
-        )
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFF7C3AED))
+                    }
+                }
+                recommendedProducts.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "Chưa có sản phẩm gợi ý",
+                                fontSize = 16.sp,
+                                color = Color.Gray,
+                                textAlign = TextAlign.Center
+                            )
 
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(products) { product ->
-                ProductItem(name = product)
+                            Button(
+                                onClick = { navController.navigate("skin_analysis") },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF7C3AED)
+                                )
+                            ) {
+                                Text("Phân tích da ngay")
+                            }
+                        }
+                    }
+                }
+                else -> {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(end = 8.dp)
+                    ) {
+                        items(recommendedProducts) { product ->
+                            RecommendedProductItem(product = product)
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun ProductItem(name: String) {
+fun RecommendedProductItem(product: Product) {
+    var showDetailDialog by remember { mutableStateOf(false) }
+    
     Card(
         modifier = Modifier
-            .width(140.dp)
-            .height(200.dp),
-        shape = RoundedCornerShape(12.dp)
+            .width(160.dp)
+            .height(220.dp)
+            .clickable { showDetailDialog = true },
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column {
-            Box(
+            // Product image
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(product.imageUrl)
+                    .crossfade(true)
+                    .placeholder(R.drawable.placeholder)
+                    .error(R.drawable.placeholder)
+                    .build(),
+                contentDescription = product.name,
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
-                    .background(Color.LightGray)
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.placeholder),
-                    contentDescription = name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+                    .height(110.dp)
+            )
 
+            // Product info
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(12.dp)
             ) {
+                // Product name
                 Text(
-                    text = name,
+                    text = product.name,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
-
+                // For skin types
                 Text(
-                    text = "350.000 ₫",
-                    fontSize = 14.sp,
+                    text = product.skinTypes.joinToString(", "),
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+
+                // Price
+                Text(
+                    text = product.price,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF7C3AED)
                 )
             }
         }
+    }
+    
+    // Show product detail dialog when clicked
+    if (showDetailDialog) {
+        ProductDetailDialog(
+            product = product,
+            primaryColor = Color(0xFF4CAF50),
+            textPrimaryColor = Color(0xFF333333),
+            textSecondaryColor = Color(0xFF757575),
+            onDismiss = { showDetailDialog = false }
+        )
     }
 }
 

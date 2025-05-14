@@ -90,6 +90,10 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.firebase.crashlytics)
+    
+    // DataStore Preferences for theme settings
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

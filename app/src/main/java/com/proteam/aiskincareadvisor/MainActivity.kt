@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.composable
 import com.proteam.aiskincareadvisor.data.auth.FirebaseAuthHelper
+import com.proteam.aiskincareadvisor.ui.screens.SettingsScreen
 import com.proteam.aiskincareadvisor.ui.screens.SkincareHomeScreen
 import com.proteam.aiskincareadvisor.ui.screens.LoginScreen
 import com.proteam.aiskincareadvisor.ui.screens.main.MainScreen
@@ -71,8 +72,11 @@ fun AppNavigation() {
 
             )
         }
-
-        // Add the change_password route
-
+        
+        composable("settings") {
+            SettingsScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
     }
 }

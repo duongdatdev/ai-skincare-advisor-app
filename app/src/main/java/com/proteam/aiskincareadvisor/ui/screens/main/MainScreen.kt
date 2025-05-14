@@ -122,6 +122,12 @@ fun MainScreen(onLogout: () -> Unit) {
             composable("routine") {
                 RoutineScreen()
             }
+            
+            composable("settings") {
+                com.proteam.aiskincareadvisor.ui.screens.SettingsScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
