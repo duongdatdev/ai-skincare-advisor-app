@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -47,13 +48,14 @@ fun AISkincareTheme(
     themeViewModel: ThemeViewModel = viewModel(),
     content: @Composable () -> Unit
 ) {
-    val themeMode by remember { themeViewModel.themeMode }
-    val useDynamicColors by remember { themeViewModel.useDynamicColors }
+    val themeMode by themeViewModel.themeMode.collectAsState()
+    val useDynamicColors by themeViewModel.useDynamicColors.collectAsState()
     
     val darkTheme = when (themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        else -> isSystemInDarkTheme() // Fallback to system default
     }
     
     val colorScheme = when {
