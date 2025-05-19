@@ -130,4 +130,6 @@ dependencies {
 
     implementation (libs.firebase.firestore.ktx)
 
+    implementation ("com.google.ai.client.generativeai:generativeai:0.9.0")
+
 }

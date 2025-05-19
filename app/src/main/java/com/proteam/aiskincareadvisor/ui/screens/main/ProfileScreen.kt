@@ -48,13 +48,13 @@ fun ProfileScreen(
     // Get theme preferences from ViewModel
     val themeMode by themeViewModel.themeMode.collectAsState()
     val useDynamicColors by themeViewModel.useDynamicColors.collectAsState()
-    
+
     // Determine if dark mode is enabled
     val isDarkMode = when (themeMode) {
         ThemeMode.DARK -> true
         ThemeMode.LIGHT -> false
         ThemeMode.SYSTEM -> false // This is just for the UI switch state; actual theme follows system
-        else -> false // Fallback for safety
+        else -> false // Add else branch for exhaustiveness
     }
 
     LazyColumn(

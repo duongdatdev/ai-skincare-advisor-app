@@ -5,6 +5,8 @@ import com.azure.ai.inference.ChatCompletionsClientBuilder
 import com.azure.core.credential.AzureKeyCredential
 import com.proteam.aiskincareadvisor.BuildConfig
 
+import com.google.ai.client.generativeai.GenerativeModel
+
 object AIClient {
     private val key = AzureKeyCredential(BuildConfig.API_AI_TOKEN)
     private const val ENDPOINT = "https://models.github.ai/inference"
@@ -14,5 +16,14 @@ object AIClient {
             .credential(key)
             .endpoint(ENDPOINT)
             .buildClient()
+    }
+
+    private val apiKey = BuildConfig.API_AI_TOKEN
+
+    val chatModel: GenerativeModel by lazy {
+        GenerativeModel(
+            modelName = "gemini-2.0-flash",
+            apiKey = apiKey
+        )
     }
 }
