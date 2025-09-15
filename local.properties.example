@@ -1,0 +1,17 @@
+# local.properties.example
+# Copy this file to local.properties and fill in your actual values
+# DO NOT commit local.properties to version control
+
+# Azure AI Configuration
+# Get these from your Azure AI service account
+apiAIToken=your_azure_ai_token_here
+azureAIEndpoint=your_azure_ai_endpoint_here
+
+# Google Services Configuration
+# Get this from your Firebase project console -> Project Settings -> General tab
+GOOGLE_WEB_CLIENT_ID=your_google_web_client_id_here
+
+# Note: Also make sure to:
+# 1. Add google-services.json to app/ directory
+# 2. Update recaptcha_site_key in app/src/main/res/values/strings.xml
+# 3. Configure Firebase Authentication and Firestore in Firebase Console
