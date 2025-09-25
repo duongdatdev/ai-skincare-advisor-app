@@ -206,7 +206,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For support and questions:
 - Create an issue in this repository
-- Contact: [Your Contact Information]
+- Contact: duongdat030@gmail.com
 
 ## 🙏 Acknowledgments
 
